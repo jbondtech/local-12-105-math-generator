@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART Local 105 & OETT Local 12 Master Math Quiz Engine</title>
+    <!-- MathJax 3 Configuration -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['\\(', '\\)']],
+                displayMath: [['\\[', '\\]']],
+                packages: {'[+]': ['mhchem', 'enclose']}
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <!-- Tailwind CSS & Google Fonts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .font-mono-math { font-family: 'JetBrains Mono', monospace; }
+        .badge-105 { background-color: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; }
+        .badge-12 { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+        .badge-both { background-color: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff; }
+        .card-selected { border-color: #2563eb !important; background-color: #eff6ff !important; }
+        .opt-selected { border-color: #2563eb !important; background-color: #eff6ff !important; ring: 2px; ring-color: #3b82f6; }
+        .opt-correct { border-color: #16a34a !important; background-color: #f0fdf4 !important; color: #15803d !important; font-weight: bold; }
+        .opt-incorrect { border-color: #dc2626 !important; background-color: #fef2f2 !important; color: #b91c1c !important; }
+        .svg-container svg { max-width: 100%; height: auto; margin: 0 auto; }
+        table.math-table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 0.9rem; }
+        table.math-table th, table.math-table td { border: 1px solid #cbd5e1; padding: 6px 10px; text-align: center; }
+        table.math-table th { background-color: #f1f5f9; font-weight: 600; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Top Navigation Header -->
+    <header class="bg-slate-900 text-white shadow-lg sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap justify-between items-center gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="bg-blue-600 text-white p-2 rounded-lg font-bold text-xl">105 & 12</div>
+                <div>
+                    <h1 class="font-extrabold text-lg sm:text-xl tracking-tight leading-none" id="appHeaderTitle">SMART Local 105 & OETT Local 12</h1>
+                    <p class="text-xs text-slate-400 font-medium" id="appHeaderSub">Master Math Practice Engine & Exam Simulator</p>
+                </div>
+            </div>
+
+            <!-- Global Action Controls (Teacher View Only) -->
+            <div id="teacherHeaderControls" class="flex items-center gap-3 flex-wrap">
+                <button onclick="toggleSettingsModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs px-3 py-2 rounded-md font-semibold border border-slate-700 flex items-center gap-1.5 transition">
+                    ⚙️ Spreadsheet Webhook
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main App Layout Container -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Sidebar: Topic Selector & Generator Controls (Teacher Mode Only) -->
+        <aside id="teacherSidebar" class="lg:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-col space-y-4">
+            
+            <!-- Category Filter Tabs -->
+            <div>
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Curriculum Filter</label>
+                <div class="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-lg text-xs font-bold text-center">
+                    <button onclick="filterModules('ALL')" id="filterAll" class="py-1.5 rounded bg-white text-slate-800 shadow-sm">All</button>
+                    <button onclick="filterModules('105')" id="filter105" class="py-1.5 rounded text-slate-600 hover:text-slate-900">L-105</button>
+                    <button onclick="filterModules('12')" id="filter12" class="py-1.5 rounded text-slate-600 hover:text-slate-900">L-12</button>
+                    <button onclick="filterModules('TEST')" id="filterTest" class="py-1.5 rounded text-slate-600 hover:text-slate-900">Exams</button>
+                </div>
+            </div>
+
+            <!-- Full Practice Exam Direct Buttons -->
+            <div class="space-y-2 border-b border-slate-200 pb-3">
+                <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider">Full Timed Exams</span>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="selectExamPreset('105')" id="preset105Btn" class="p-2.5 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-900 text-left transition flex flex-col">
+                        <span class="text-xs font-extrabold text-blue-700">L-105 Full Exam</span>
+                        <span class="text-[10px] text-blue-600">25 Questions</span>
+                    </button>
+                    <button onclick="selectExamPreset('12')" id="preset12Btn" class="p-2.5 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-left transition flex flex-col">
+                        <span class="text-xs font-extrabold text-amber-800">L-12 Full Exam</span>
+                        <span class="text-[10px] text-amber-700">17 Heavy Modules</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Question Count Selector -->
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label for="questionCountInput" class="text-xs font-bold text-slate-700 uppercase">Question Count</label>
+                    <span id="questionCountDisplay" class="text-xs font-extrabold text-blue-600">5 Questions</span>
+                </div>
+                <input type="range" id="questionCountInput" min="1" max="25" value="5" oninput="updateCountDisplay()" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600">
+            </div>
+
+            <!-- Primary Generate Button -->
+            <button onclick="generateQuizBatch()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-extrabold py-3 px-4 rounded-xl shadow-md transition flex items-center justify-center gap-2 text-sm">
+                <span>🎲</span> Generate Quiz Batch
+            </button>
+
+            <!-- Generate Student Share Link Button -->
+            <button onclick="copyStudentLink()" class="w-full bg-slate-800 hover:bg-slate-900 text-white font-bold py-2.5 px-4 rounded-xl shadow transition flex items-center justify-center gap-2 text-xs">
+                <span>🔗</span> Copy Student Assignment Link
+            </button>
+
+            <!-- Topic Module List -->
+            <div class="space-y-1 mt-2">
+                <span class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Select Module Topic</span>
+                <div class="overflow-y-auto max-h-[320px] space-y-1.5 pr-1" id="moduleList">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Right Main Workspace: Student Form & Problem Container -->
+        <section id="workspaceArea" class="lg:col-span-8 space-y-6">
+
+            <!-- Student Identification Card (Student Mode Only) -->
+            <div id="studentIdCard" class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                    <h2 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                        <span>👤</span> Student Registration
+                    </h2>
+                    <span class="text-xs text-slate-400 font-medium">Required before submitting</span>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label for="studentFirstName" class="block text-xs font-bold text-slate-700 uppercase mb-1">First Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="studentFirstName" placeholder="Jane" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs font-semibold text-slate-800 focus:border-blue-600 focus:bg-white focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label for="studentLastName" class="block text-xs font-bold text-slate-700 uppercase mb-1">Last Name <span class="text-red-500">*</span></label>
+                        <input type="text" id="studentLastName" placeholder="Smith" required class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-xs font-semibold text-slate-800 focus:border-blue-600 focus:bg-white focus:outline-none transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score / Assessment Summary Banner (Appears Post-Submission) -->
+            <div id="summaryBanner" class="hidden bg-slate-900 text-white rounded-xl shadow-lg p-5 flex flex-wrap justify-between items-center gap-4">
+                <div>
+                    <span id="summaryTestTitle" class="text-xs font-bold uppercase tracking-wider text-blue-400 block">Assessment Results</span>
+                    <h3 id="summaryScoreText" class="text-2xl font-black text-white">Score: 0 / 0 (0%)</h3>
+                    <p id="summaryStudentName" class="text-xs text-slate-300 mt-0.5">Student: Jane Smith</p>
+                </div>
+                <div id="summaryBadge" class="bg-emerald-500 text-white font-extrabold px-4 py-2 rounded-lg text-sm shadow">
+                    PASSED
+                </div>
+            </div>
+
+            <!-- Empty / Welcome Placeholder State -->
+            <div id="emptyState" class="bg-white rounded-xl shadow-sm border border-slate-200 p-10 text-center space-y-3">
+                <div class="text-4xl">🎲</div>
+                <h3 class="text-lg font-extrabold text-slate-800">No Problems Generated Yet</h3>
+                <p class="text-xs text-slate-500 max-w-md mx-auto">Select a topic or exam preset from the left sidebar, choose your desired question count, and click <strong>Generate Quiz Batch 🎲</strong> to build your assignment.</p>
+            </div>
+
+            <!-- Active Problems Form Container -->
+            <form id="quizForm" onsubmit="event.preventDefault(); submitAssessment();" class="space-y-6 hidden">
+                <div id="problemsContainer" class="space-y-6">
+                    <!-- Dynamic problem cards rendered here -->
+                </div>
+
+                <!-- Submit Button Bar -->
+                <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-5 flex flex-wrap justify-between items-center gap-4">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-800">Ready to Complete?</h4>
+                        <p class="text-[11px] text-slate-500">Submitting records your score to the spreadsheet and reveals step-by-step solutions.</p>
+                    </div>
+                    <button type="submit" id="submitBtn" class="bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm py-3 px-6 rounded-xl shadow-md transition transform hover:-translate-y-0.5 flex items-center gap-2">
+                        <span>📊</span> Submit Work to Spreadsheet & Reveal Results
+                    </button>
+                </div>
+            </form>
+
+        </section>
+    </main>
+
+    <!-- Spreadsheet Webhook Settings Modal (Teacher View Only) -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-xl shadow-2xl border border-slate-200 max-w-lg w-full p-6 space-y-4 m-4">
+            <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                <h3 class="font-bold text-slate-900 text-sm">⚙️ Google Sheet Webhook Settings</h3>
+                <button onclick="toggleSettingsModal()" class="text-slate-400 hover:text-slate-600 font-bold">✕</button>
+            </div>
+            <p class="text-xs text-slate-600 leading-relaxed">
+                Paste your <strong>Google Apps Script Web App Endpoint URL</strong> below. When students submit their quiz link, their First Name, Last Name, Score, Percentage, Test Title, and Timestamp will automatically transmit to your spreadsheet.
+            </p>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 mb-1">Google Apps Script Web App URL</label>
+                <input type="url" id="webhookUrlInput" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs p-2.5 border border-slate-300 rounded-lg font-mono focus:border-blue-600 focus:outline-none">
+            </div>
+            <div class="flex justify-end gap-2 pt-2">
+                <button onclick="toggleSettingsModal()" class="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-lg">Cancel</button>
+                <button onclick="saveWebhookSettings()" class="px-4 py-2 text-xs font-bold bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Save Settings</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Master JavaScript Engine -->
+    <script>
+        // ==========================================
+        // UTILITY HELPERS & MATH CLEANUP
+        // ==========================================
+        function getRandomInt(min, max) {
+            return Math.floor(Math.random() * (max - min + 1)) + min;
+        }
+
+        function gcd(a, b) {
+            return b === 0 ? Math.abs(a) : gcd(b, a % b);
+        }
+
+        function shuffleArray(array) {
+            const arr = [...array];
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+            return arr;
+        }
+
+        // Strips any dollar signs or extra delimiters from math strings
+        function cleanMath(str) {
+            if (!str) return '';
+            return str.replace(/^\$+|\$+$/g, '').trim();
+        }
+
+        // ==========================================
+        // LOCAL 105 GENERATORS (14 MODULES + HARDER ELIMINATION)
+        // ==========================================
+
+        class WholeNumberArithmeticGenerator {
+            generate() {
+                const types = ['ADDITION', 'SUBTRACTION', 'MULTIPLICATION', 'DIVISION'];
+                const type = types[getRandomInt(0, 3)];
+                let promptText = "Solve:", promptLatex = "", correctAnswer = "";
+
+                if (type === 'ADDITION') {
+                    const a = getRandomInt(100, 999), b = getRandomInt(100, 999);
+                    promptLatex = `\\begin{array}{r} ${a} \\\\ + \\quad ${b} \\\\ \\hline \\end{array}`;
+                    correctAnswer = `${a + b}`;
+                } else if (type === 'SUBTRACTION') {
+                    const a = getRandomInt(500, 999), b = getRandomInt(100, a - 1);
+                    promptLatex = `\\begin{array}{r} ${a} \\\\ - \\quad ${b} \\\\ \\hline \\end{array}`;
+                    correctAnswer = `${a - b}`;
+                } else if (type === 'MULTIPLICATION') {
+                    const a = getRandomInt(12, 99), b = getRandomInt(3, 9);
+                    promptLatex = `\\begin{array}{r} ${a} \\\\ \\times \\quad ${b} \\\\ \\hline \\end{array}`;
+                    correctAnswer = `${a * b}`;
+                } else {
+                    const divisor = getRandomInt(3, 12), quotient = getRandomInt(12, 45);
+                    const dividend = divisor * quotient;
+                    promptLatex = `${divisor} \\overline{) ${dividend}}`;
+                    correctAnswer = `${quotient}`;
+                }
+
+                const c = parseInt(correctAnswer);
+                const options = shuffleArray([correctAnswer, `${c + 10}`, `${Math.max(1, c - 5)}`, `${c + 1}`]);
+                return {
+                    id: `wn_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'wn_arith',
+                    moduleTitle: 'Whole Number Arithmetic',
+                    tag: '105',
+                    prompt: promptText,
+                    promptLatex: cleanMath(promptLatex),
+                    correctAnswer: cleanMath(correctAnswer),
+                    options: options.map(cleanMath),
+                    explanation: `Calculate vertically: ${cleanMath(correctAnswer)}`
+                };
+            }
+        }
+
+        class FractionArithmeticGenerator {
+            generate() {
+                const den = getRandomInt(3, 12);
+                const n1 = getRandomInt(1, den - 1), n2 = getRandomInt(1, den - 1);
+                const isAdd = Math.random() > 0.5;
+                let ansNum = isAdd ? (n1 + n2) : Math.abs(n1 - n2);
+                let latex = "";
+                if (!isAdd && n1 < n2) {
+                    latex = `\\frac{${n2}}{${den}} - \\frac{${n1}}{${den}}`;
+                } else if (!isAdd) {
+                    latex = `\\frac{${n1}}{${den}} - \\frac{${n2}}{${den}}`;
+                } else {
+                    latex = `\\frac{${n1}}{${den}} + \\frac{${n2}}{${den}}`;
+                }
+
+                const g = gcd(ansNum, den);
+                let correctAnswer = "";
+                if (ansNum === 0) correctAnswer = "0";
+                else if (g === den) correctAnswer = `${ansNum / den}`;
+                else correctAnswer = `\\frac{${ansNum / g}}{${den / g}}`;
+
+                const options = shuffleArray([correctAnswer, `\\frac{${Math.min(ansNum + 1, den)}}{${den}}`, `\\frac{1}{2}`, `1`]);
+                return {
+                    id: `frac_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'frac_arith',
+                    moduleTitle: 'Fraction Arithmetic',
+                    tag: '105',
+                    prompt: "Compute and simplify to lowest terms:",
+                    promptLatex: `${latex} = \\text{___}`,
+                    correctAnswer: cleanMath(correctAnswer),
+                    options: options.map(cleanMath),
+                    explanation: `Combine numerators over common denominator ${den}, then reduce using GCD.`
+                };
+            }
+        }
+
+        class FractionConceptsGenerator {
+            generate() {
+                const den = getRandomInt(3, 8), w = getRandomInt(1, 4), r = getRandomInt(1, den - 1);
+                const num = w * den + r;
+                const correctAnswer = `${w}\\frac{${r}}{${den}}`;
+                const options = shuffleArray([correctAnswer, `${w + 1}\\frac{${r}}{${den}}`, `${w}\\frac{1}{${den}}`, `${w + 2}`]);
+                return {
+                    id: `fc_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'frac_concept',
+                    moduleTitle: 'Fraction Simplification & Mixed Numbers',
+                    tag: '105',
+                    prompt: "Convert the improper fraction to a mixed number:",
+                    promptLatex: `\\frac{${num}}{${den}} = \\text{___}`,
+                    correctAnswer: cleanMath(correctAnswer),
+                    options: options.map(cleanMath),
+                    explanation: `Divide ${num} by ${den}: quotient is ${w} with remainder ${r}, giving ${correctAnswer}.`
+                };
+            }
+        }
+
+        class DecimalMultiplicationStudyGuideGenerator {
+            generate() {
+                const w = getRandomInt(12, 75);
+                const t = (getRandomInt(2, 9) / 10).toFixed(1);
+                const ans = (w * parseFloat(t)).toFixed(1);
+                const promptLatex = `\\begin{array}{r} ${w} \\\\ \\times \\quad ${t} \\\\ \\hline \\end{array}`;
+                const options = shuffleArray([ans, `${(parseFloat(ans) + 1.2).toFixed(1)}`, `${(parseFloat(ans) * 10).toFixed(1)}`, `${Math.max(0.1, parseFloat(ans) - 2.5).toFixed(1)}`]);
+                return {
+                    id: `dm_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'dec_mult',
+                    moduleTitle: 'Decimal Multiplication (Study Guide)',
+                    tag: '105',
+                    prompt: "Multiply vertically:",
+                    promptLatex: cleanMath(promptLatex),
+                    correctAnswer: cleanMath(ans),
+                    options: options.map(cleanMath),
+                    explanation: `Multiply ${w} × ${t} = ${ans}`
+                };
+            }
+        }
+
+        class DecimalArithmeticGenerator {
+            generate() {
+                const a = (getRandomInt(100, 999) / 100).toFixed(2);
+                const b = (getRandomInt(10, 99) / 100).toFixed(2);
+                const ans = (parseFloat(a) + parseFloat(b)).toFixed(2);
+                const options = shuffleArray([ans, `${(parseFloat(ans) + 0.5).toFixed(2)}`, `${Math.max(0, parseFloat(ans) - 0.25).toFixed(2)}`, `${(parseFloat(ans) + 1.10).toFixed(2)}`]);
+                return {
+                    id: `da_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'dec_arith',
+                    moduleTitle: 'Decimal Arithmetic',
+                    tag: '105',
+                    prompt: "Add the decimal numbers:",
+                    promptLatex: `${a} + ${b} = \\text{___}`,
+                    correctAnswer: cleanMath(ans),
+                    options: options.map(cleanMath),
+                    explanation: `Align decimal points: ${a} + ${b} = ${ans}`
+                };
+            }
+        }
+
+        class DecimalToFractionGenerator {
+            generate() {
+                const table = [
+                    {d: "0.25", ans: "\\frac{1}{4}"},
+                    {d: "0.50", ans: "\\frac{1}{2}"},
+                    {d: "0.75", ans: "\\frac{3}{4}"},
+                    {d: "0.125", ans: "\\frac{1}{8}"},
+                    {d: "0.375", ans: "\\frac{3}{8}"},
+                    {d: "0.625", ans: "\\frac{5}{8}"},
+                    {d: "0.875", ans: "\\frac{7}{8}"}
+                ];
+                const item = table[getRandomInt(0, table.length - 1)];
+                const options = shuffleArray([item.ans, "\\frac{1}{5}", "\\frac{3}{5}", "\\frac{1}{10}"]);
+                return {
+                    id: `dtf_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'dec_frac',
+                    moduleTitle: 'Decimal to Fraction Conversion',
+                    tag: '105',
+                    prompt: "Convert terminating decimal to simplified fraction:",
+                    promptLatex: `${item.d} = \\text{___}`,
+                    correctAnswer: cleanMath(item.ans),
+                    options: options.map(cleanMath),
+                    explanation: `${item.d} converts to simplified fraction ${item.ans}`
+                };
+            }
+        }
+
+        class NumberConversionsGenerator {
+            generate() {
+                const dec = (getRandomInt(5, 95) / 100).toFixed(2);
+                const pct = Math.round(parseFloat(dec) * 100);
+                const correctAnswer = `${pct}\\%`;
+                const options = shuffleArray([correctAnswer, `${pct / 10}\\%`, `${pct + 5}\\%`, `${pct - 2}\\%`]);
+                return {
+                    id: `conv_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'num_conv',
+                    moduleTitle: 'Number Conversions (% / Decimal)',
+                    tag: '105',
+                    prompt: "Convert decimal to percentage:",
+                    promptLatex: `${dec} = \\text{___}\\%`,
+                    correctAnswer: cleanMath(correctAnswer),
+                    options: options.map(cleanMath),
+                    explanation: `Multiply decimal by 100: ${dec} × 100 = ${pct}%`
+                };
+            }
+        }
+
+        class FractionPercentOfNumberGenerator {
+            generate() {
+                const pct = getRandomInt(1, 19) * 5;
+                const N = getRandomInt(1, 20) * 20;
+                const ans = (pct / 100) * N;
+                const options = shuffleArray([`${ans}`, `${ans + 5}`, `${Math.max(1, ans - 4)}`, `${ans + 15}`]);
+                return {
+                    id: `fp_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'frac_pct_num',
+                    moduleTitle: 'Fraction & Percent of a Number',
+                    tag: '105',
+                    prompt: "Calculate percentage of the number:",
+                    promptLatex: `${pct}\\% \\text{ of } ${N} = \\text{___}`,
+                    correctAnswer: cleanMath(`${ans}`),
+                    options: options.map(cleanMath),
+                    explanation: `(${pct} ÷ 100) × ${N} = ${ans}`
+                };
+            }
+        }
+
+        class AppliedPercentsGenerator {
+            generate() {
+                const amount = getRandomInt(10, 50) * 10;
+                const pct = getRandomInt(2, 8) * 2;
+                const ans = ((pct / 100) * amount).toFixed(2);
+                const options = shuffleArray([`\\$${ans}`, `\\$${(parseFloat(ans) + 5).toFixed(2)}`, `\\$${Math.max(1, parseFloat(ans) - 4).toFixed(2)}`, `\\$${(parseFloat(ans) + 12).toFixed(2)}`]);
+                return {
+                    id: `ap_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'applied_pct',
+                    moduleTitle: 'Applied Percents & Payroll',
+                    tag: '105',
+                    prompt: `Calculate the ${pct}% payroll tax deduction on a \\$${amount} gross pay:`,
+                    promptLatex: `${pct}\\% \\times \\$${amount} = \\text{___}`,
+                    correctAnswer: cleanMath(`\\$${ans}`),
+                    options: options.map(cleanMath),
+                    explanation: `${pct}% of $${amount} = $${ans}`
+                };
+            }
+        }
+
+        class ExponentsAndPowersGenerator {
+            generate() {
+                const base = getRandomInt(2, 9), exp = getRandomInt(2, 4);
+                const ans = Math.pow(base, exp);
+                const multTrap = base * exp;
+                const options = shuffleArray([`${ans}`, `${multTrap}`, `${ans + base}`, `${Math.pow(base, exp + 1)}`]);
+                return {
+                    id: `exp_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'exp_powers',
+                    moduleTitle: 'Exponents & Powers',
+                    tag: '105',
+                    prompt: "Evaluate power expression:",
+                    promptLatex: `${base}^{${exp}} = \\text{___}`,
+                    correctAnswer: cleanMath(`${ans}`),
+                    options: options.map(cleanMath),
+                    explanation: `${base} raised to power ${exp} = ${ans}`
+                };
+            }
+        }
+
+        class AlgebraicEvaluationGenerator {
+            generate() {
+                const x = getRandomInt(2, 10), y = getRandomInt(1, 8);
+                const a = getRandomInt(2, 6), b = getRandomInt(2, 6);
+                const ans = a * x + b * y;
+                const options = shuffleArray([`${ans}`, `${ans + 4}`, `${Math.max(1, ans - 3)}`, `${ans + 10}`]);
+                return {
+                    id: `alg_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'alg_eval',
+                    moduleTitle: 'Algebraic Evaluation',
+                    tag: '105',
+                    prompt: `Evaluate expression for X = ${x} and Y = ${y}:`,
+                    promptLatex: `${a}X + ${b}Y = \\text{___}`,
+                    correctAnswer: cleanMath(`${ans}`),
+                    options: options.map(cleanMath),
+                    explanation: `Substitute X = ${x}, Y = ${y}: (${a}×${x}) + (${b}×${y}) = ${a*x} + ${b*y} = ${ans}`
+                };
+            }
+        }
+
+        class OrderOfOperationsIntegersGenerator {
+            generate() {
+                const Q = getRandomInt(2, 10);
+                const D = [2, 3, 4, 5, 6, 8, 10][getRandomInt(0, 6)];
+                const N = D * Q, A = getRandomInt(10, 30);
+                const BC_sum = A + N;
+                const B = getRandomInt(2, BC_sum - 2), C = BC_sum - B;
+                const options = shuffleArray([`${Q}`, `-${Q}`, `${Q + 2}`, `${Q - 1}`]);
+                return {
+                    id: `pemdas_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'pemdas',
+                    moduleTitle: 'Order of Operations (PEMDAS)',
+                    tag: '105',
+                    prompt: "Solve the fractional PEMDAS expression:",
+                    promptLatex: `\\frac{${A} - (${B} + ${C})}{-${D}} = \\text{___}`,
+                    correctAnswer: cleanMath(`${Q}`),
+                    options: options.map(cleanMath),
+                    explanation: `Numerator: ${A} - (${B}+${C}) = ${A} - ${BC_sum} = -${N}. Then -${N} ÷ -${D} = +${Q}`
+                };
+            }
+        }
+
+        class PolynomialArithmeticGenerator {
+            generate() {
+                const c1 = getRandomInt(2, 8), c2 = getRandomInt(2, 8), const1 = getRandomInt(10, 40);
+                const c3 = getRandomInt(1, c1 - 1), c4 = getRandomInt(1, c2 - 1), const2 = getRandomInt(1, const1 - 1);
+                const r1 = c1 - c3, r2 = c2 - c4, rConst = const1 - const2;
+                const ans = `${r1}Y + ${r2}X + ${rConst}`;
+                const options = shuffleArray([ans, `${r1 + 1}Y + ${r2}X + ${rConst}`, `${r1}Y + ${r2 + 1}X + ${rConst}`, `${r1}Y + ${r2}X - ${rConst}`]);
+                return {
+                    id: `poly_${Date.now()}_${getRandomInt(100,999)}`,
+                    moduleKey: 'poly_arith',
+                    moduleTitle: 'Polynomial Arithmetic',
+                    tag: '105',
+                    prompt: "Subtract vertically to combine like terms:",
+                    promptLatex: `\\begin{array}{r} ${c1}Y + ${c2}X + ${const1} \\\\ - (${c3}Y + ${c4}X + ${const2}) \\\\ \\hline \\end{array}`,
+                    correctAnswer: cleanMath(ans),
+                    options: options.map(cleanMath),
+                    explanation: `Subtract matching terms: (${c1}-${c3})Y + (${c2}-${c4})X + (${const1}-${const2}) = ${ans}`
+                };
+            }
+        }
+
+        class SystemsOfEquationsGenerator {
+            generate() {
+                const isHarderMode = Math.random() > 0.4;
+                const solX = getRandomInt(2, 8), solY = getRandomInt(2, 8);
+
+                if (isHarderMode) {
+                    // HARDER ELIMINATION MODE: Both X and Y have non-unit coefficients >= 2
+                    const a1 = getRandomInt(2, 5), a2 = getRandomInt(2, 5);
+                    const bVal = getRandomInt(2, 6);
+                    const isOpposite = Math.random() > 0.5;
+                    const b1 = bVal, b2 = isOpposite ? -bVal : bVal;
+                    const C1 = a1 * solX + b1 * solY;
+                    const C2 = a2 * solX + b2 * solY;
+                    
+                    const sign1 = b1 >= 0 ? '+' : '-';
+                    const sign2 = b2 >= 0 ? '+' : '-';
+                    const promptLatex = `\\begin{array}{l} ${a1}X ${sign1} ${Math.abs(b1)}Y = ${C1} \\\\ ${a2}X ${sign2} ${Math.abs(b2)}Y = ${C2} \\end{array}`;
+                    const correctAnswer = `X = ${solX}, Y = ${solY}`;
+                    const options = shuffleArray([correctAnswer, `X = ${solX + 1}, Y = ${solY}`, `X = ${solX}, Y = ${solY + 1}`, `X = ${solX - 1}, Y = ${solY + 2}`]);
+
+                    return {
+                        id: `sys_${Date.now()}_${getRandomInt(100,999)}`,
+                        moduleKey: 'sys_eq',
+                        moduleTitle: 'Systems of Equations (Harder Elimination)',
+                        tag: '105',
+                        prompt: "Solve system of linear equations (Harder Elimination Mode):",
+                        promptLatex: cleanMath(promptLatex),
+                        correctAnswer: cleanMath(correctAnswer),
+                        options: options.map(cleanMath),
+                        explanation: `Y coefficients are matched (${b1}Y and ${b2}Y). Add/subtract equations to eliminate Y, solve for X = ${solX}, then substitute to get Y = ${solY}.`
+                    };
+                } else {
+                    // Standard Elimination Mode
+                    const c1 = getRandomInt(3, 7), c2 = getRandomInt(2, c1 - 1);
+                    const C1 = c1 * solX - solY, C2 = c2 * solX - solY;
+                    const promptLatex = `\\begin{array}{l} ${c1}X - Y = ${C1} \\\\ ${c2}X - Y = ${C2} \\end{array}`;
+                    const correctAnswer = `X = ${solX}, Y = ${solY}`;
+                    const options = shuffleArray([correctAnswer, `X = ${solX + 1}, Y = ${solY}`, `X = ${solX}, Y = ${solY + 2}`, `X = ${solX - 1}, Y = ${solY}`]);
+
+                    return {
+                        id: `sys_${Date.now()}_${getRandomInt(100,999)}`,
+                        moduleKey: 'sys_eq',
+                        moduleTitle: 'Systems of Equations (Standard)',
+                        tag: '105',
+                        prompt: "Solve system of linear equations by elimination:",
+                        promptLatex: cleanMath(promptLatex),
+                        correctAnswer: cleanMath(correctAnswer),
+                        options: options.map(cleanMath),
+                        explanation: `Subtract equations: (${c1}-${c2})X = ${C1-C2} → X = ${solX}. Then Y = ${solY}.`
+                    };
+                }
+            }
+        }
+
+        // ==========================================
+        // LOCAL 12 HEAVY EQUIPMENT GENERATORS (17 MODULES)
+        // ==========================================
+
+        class StackedMaterialThicknessGenerator {
+            generate() {
+                const a = getRandomInt(1, 3), b = getRandomInt(1, 3), c = getRandomInt(1, 3);
+                const total = a + b + c;
+                const correctAnswer = `\\frac{${total}}{8}''`;
+                const options = shuffleArray([correctAnswer, `\\frac{${total + 1}}{8}''`, `\\frac{${total - 1}}{8}''`, `1''`]);
+                return {
+                    id: `l12_1_${Date.now()}`, moduleKey: 'l12_shim', moduleTitle: 'Stacked Shim Thickness', tag: '12',
+                    prompt: "Calculate total thickness of 3-layer wear pad shim stack:",
+                    promptLatex: `\\frac{${a}}{8}'' + \\frac{${b}}{8}'' + \\frac{${c}}{8}'' = \\text{___}`,
+                    correctAnswer: cleanMath(correctAnswer), options: options.map(cleanMath),
+                    explanation: `Add numerators over 8th inch denominator: ${a}+${b}+${c} = ${total}/8''`
+                };
+            }
+        }
+
+        class BulkHardwareWeightGenerator {
+            generate() {
+                const count = getRandomInt(15, 45);
+                const unitW = (getRandomInt(3, 9) * 0.5).toFixed(1);
+                const ans = (count * parseFloat(unitW)).toFixed(1);
+                const options = shuffleArray([`${ans} \\text{ lbs}`, `${(parseFloat(ans) + 12).toFixed(1)} \\text{ lbs}`, `${(count + parseFloat(unitW)).toFixed(1)} \\text{ lbs}`, `${(ans * 10).toFixed(1)} \\text{ lbs}`]);
+                return {
+                    id: `l12_2_${Date.now()}`, moduleKey: 'l12_bolt_wt', moduleTitle: 'Bulk Hardware Weight', tag: '12',
+                    prompt: `Calculate total shipment weight for ${count} Grade-8 anchor bolts at ${unitW} lbs/bolt:`,
+                    promptLatex: `${count} \\text{ bolts} \\times ${unitW} \\text{ lbs/bolt} = \\text{___}`,
+                    correctAnswer: cleanMath(`${ans} \\text{ lbs}`), options: options.map(cleanMath),
+                    explanation: `Multiply count by unit weight: ${count} × ${unitW} = ${ans} lbs`
+                };
+            }
+        }
+
+        class OperatingEngineersUnitConversionGenerator {
+            generate() {
+                const ft = getRandomInt(10, 40), inches = getRandomInt(1, 11) * 3;
+                const decFt = (ft + inches / 12).toFixed(2);
+                const options = shuffleArray([`${decFt} \\text{ ft}`, `${ft}.${inches} \\text{ ft}`, `${(ft + inches/10).toFixed(2)} \\text{ ft}`, `${(decFt * 12).toFixed(2)} \\text{ ft}`]);
+                return {
+                    id: `l12_3_${Date.now()}`, moduleKey: 'l12_unit_conv', moduleTitle: 'Grade Rod Unit Conversion', tag: '12',
+                    prompt: `Convert surveyor grade rod reading into decimal feet:`,
+                    promptLatex: `${ft}\\text{ ft } ${inches}\\text{ in.} = \\text{___ ft}`,
+                    correctAnswer: cleanMath(`${decFt} \\text{ ft}`), options: options.map(cleanMath),
+                    explanation: `Divide inches by 12: ${inches}/12 = ${(inches/12).toFixed(2)} ft. Add to ${ft} ft = ${decFt} ft.`
+                };
+            }
+        }
+
+        class RateBasedMaterialCostGenerator {
+            generate() {
+                const length = getRandomInt(15, 40) * 10;
+                const rate = (getRandomInt(25, 65) / 10).toFixed(2);
+                const ans = (length * parseFloat(rate)).toFixed(2);
+                const options = shuffleArray([`\\$${ans}`, `\\$${(parseFloat(ans) + 45).toFixed(2)}`, `\\$${(parseFloat(ans) / 10).toFixed(2)}`, `\\$${(length + parseFloat(rate)).toFixed(2)}`]);
+                return {
+                    id: `l12_4_${Date.now()}`, moduleKey: 'l12_mat_cost', moduleTitle: 'Rate-Based Material Costing', tag: '12',
+                    prompt: `Calculate cost of ${length} ft of crane wire rope at \\$${rate}/ft:`,
+                    promptLatex: `${length}\\text{ ft} \\times \\$${rate}/\\text{ft} = \\text{___}`,
+                    correctAnswer: cleanMath(`\\$${ans}`), options: options.map(cleanMath),
+                    explanation: `Multiply length by linear rate: ${length} × $${rate} = $${ans}`
+                };
+            }
+        }
+
+        class StackedMaterialQuantityGenerator {
+            generate() {
+                const thick = 1.5;
+                const count = getRandomInt(12, 36);
+                const stackH = count * thick;
+                const options = shuffleArray([`${count} \\text{ planks}`, `${count + 4} \\text{ planks}`, `${stackH} \\text{ planks}`, `${count * 2} \\text{ planks}`]);
+                return {
+                    id: `l12_5_${Date.now()}`, moduleKey: 'l12_stack_qty', moduleTitle: 'Stacked Material Quantity', tag: '12',
+                    prompt: `A staging stack of shoring planks is ${stackH} inches high. If each plank is ${thick} inches thick, how many planks are in the stack?`,
+                    promptLatex: `\\text{Plank Count} = \\frac{${stackH}''}{${thick}''} = \\text{___}`,
+                    correctAnswer: cleanMath(`${count} \\text{ planks}`), options: options.map(cleanMath),
+                    explanation: `Divide total stack height by plank thickness: ${stackH} ÷ ${thick} = ${count}`
+                };
+            }
+        }
+
+        class CompositeAssemblyCostingGenerator {
+            generate() {
+                const staStart = getRandomInt(10, 25), staEnd = staStart + getRandomInt(4, 12);
+                const dist = (staEnd - staStart) * 100;
+                const rate = 18.50;
+                const ans = (dist * rate).toFixed(2);
+                const options = shuffleArray([`\\$${ans}`, `\\$${(dist * 10).toFixed(2)}`, `\\$${((staStart + staEnd) * rate).toFixed(2)}`, `\\$${(dist * 25).toFixed(2)}`]);
+                return {
+                    id: `l12_6_${Date.now()}`, moduleKey: 'l12_stationing', moduleTitle: 'Stationing & Assembly Costing', tag: '12',
+                    prompt: `Calculate guardrail installation cost from STA ${staStart}+00 to STA ${staEnd}+00 at \\$${rate.toFixed(2)}/linear foot:`,
+                    promptLatex: `\\text{Distance} = (${staEnd}+00) - (${staStart}+00) = ${dist}\\text{ ft}`,
+                    correctAnswer: cleanMath(`\\$${ans}`), options: options.map(cleanMath),
+                    explanation: `Station difference = ${staEnd - staStart} stations = ${dist} feet. Cost: ${dist} × $${rate} = $${ans}`
+                };
+            }
+        }
+
+        class SafeWorkingLoadCapacityGenerator {
+            generate() {
+                const fractionTons = [{label: "\\frac{3}{4}", lbs: 1500}, {label: "\\frac{1}{2}", lbs: 1000}, {label: "1\\frac{1}{2}", lbs: 3000}, {label: "2\\frac{1}{4}", lbs: 4500}];
+                const item = fractionTons[getRandomInt(0, fractionTons.length - 1)];
+                const options = shuffleArray([`${item.lbs} \\text{ lbs}`, `${item.lbs - 200} \\text{ lbs}`, `${item.lbs / 2} \\text{ lbs}`, `${item.lbs + 500} \\text{ lbs}`]);
+                return {
+                    id: `l12_7_${Date.now()}`, moduleKey: 'l12_swl', moduleTitle: 'Safe Working Load Capacity', tag: '12',
+                    prompt: `Convert web sling Safe Working Load (SWL) rating of ${item.label} tons into pounds (1 short ton = 2,000 lbs):`,
+                    promptLatex: `${item.label} \\text{ tons} = \\text{___ lbs}`,
+                    correctAnswer: cleanMath(`${item.lbs} \\text{ lbs}`), options: options.map(cleanMath),
+                    explanation: `Multiply fractional tons by 2,000 lbs/ton: ${item.label} × 2,000 = ${item.lbs} lbs`
+                };
+            }
+        }
+
+        class RectangularVolumeGenerator {
+            generate() {
+                const L = getRandomInt(10, 20), W = getRandomInt(6, 12), H = getRandomInt(3, 6);
+                const cuFt = L * W * H;
+                const cuYd = (cuFt / 27).toFixed(2);
+                const options = shuffleArray([`${cuYd} \\text{ cu yds}`, `${(cuFt / 9).toFixed(2)} \\text{ cu yds}`, `${cuFt} \\text{ cu yds}`, `${L + W + H} \\text{ cu yds}`]);
+                return {
+                    id: `l12_8_${Date.now()}`, moduleKey: 'l12_volume', moduleTitle: 'Trench Volume & Cubic Yards', tag: '12',
+                    prompt: `Calculate excavation volume in cubic yards for a trench box measuring ${L}' long by ${W}' wide by ${H}' deep:`,
+                    promptLatex: `V = \\frac{${L}' \\times ${W}' \\times ${H}'}{27 \\text{ cu ft/cu yd}} = \\text{___}`,
+                    correctAnswer: cleanMath(`${cuYd} \\text{ cu yds}`), options: options.map(cleanMath),
+                    explanation: `Volume = ${L} × ${W} × ${H} = ${cuFt} cu ft. Divide by 27 cu ft/cu yd = ${cuYd} cu yds.`
+                };
+            }
+        }
+
+        class DecimalFractionEquivalenceGenerator {
+            generate() {
+                const pairs = [{d: "3.75", f: "3\\frac{3}{4}"}, {d: "5.625", f: "5\\frac{5}{8}"}, {d: "12.40", f: "12\\frac{2}{5}"}, {d: "8.125", f: "8\\frac{1}{8}"}];
+                const p = pairs[getRandomInt(0, pairs.length - 1)];
+                const options = shuffleArray([p.f, "3\\frac{1}{2}", "5\\frac{3}{8}", "12\\frac{1}{4}"]);
+                return {
+                    id: `l12_9_${Date.now()}`, moduleKey: 'l12_dec_equiv', moduleTitle: 'Decimal / Fraction Grade Rod Equivalence', tag: '12',
+                    prompt: `Convert laser grade reading of ${p.d} feet into trade mixed fraction feet:`,
+                    promptLatex: `${p.d}\\text{ ft} = \\text{___ ft}`,
+                    correctAnswer: cleanMath(p.f), options: options.map(cleanMath),
+                    explanation: `${p.d} converts directly to ${p.f}`
+                };
+            }
+        }
+
+        class WeightedGroupAverageGenerator {
+            generate() {
+                const n1 = 4, w1 = 250, n2 = 6, w2 = 400;
+                const totalW = n1 * w1 + n2 * w2;
+                const avg = (totalW / (n1 + n2)).toFixed(1);
+                const simpleAvg = ((w1 + w2) / 2).toFixed(1);
+                const options = shuffleArray([`${avg} \\text{ lbs/pallet}`, `${simpleAvg} \\text{ lbs/pallet}`, `${totalW} \\text{ lbs}`, `${avg - 15} \\text{ lbs/pallet}`]);
+                return {
+                    id: `l12_10_${Date.now()}`, moduleKey: 'l12_weighted_avg', moduleTitle: 'Cargo Weighted Group Average', tag: '12',
+                    prompt: `Find the weighted average weight per pallet for a shipment of ${n1} pallets at ${w1} lbs each and ${n2} pallets at ${w2} lbs each:`,
+                    promptLatex: `\\bar{W} = \\frac{(${n1} \\times ${w1}) + (${n2} \\times ${w2})}{${n1} + ${n2}} = \\text{___}`,
+                    correctAnswer: cleanMath(`${avg} \\text{ lbs/pallet}`), options: options.map(cleanMath),
+                    explanation: `Total weight = ${n1*w1} + ${n2*w2} = ${totalW} lbs. Divide by total pallets (${n1+n2}): ${totalW} ÷ 10 = ${avg} lbs/pallet.`
+                };
+            }
+        }
+
+        class MultiTermFractionSummationGenerator {
+            generate() {
+                const ans = "1\\frac{7}{16}''";
+                const options = shuffleArray([ans, "\\frac{10}{16}''", "1\\frac{1}{2}''", "2''"]);
+                return {
+                    id: `l12_11_${Date.now()}`, moduleKey: 'l12_multiterm_frac', moduleTitle: 'Multi-Term Fraction Summation', tag: '12',
+                    prompt: "Calculate cumulative shim stack clearance (LCD = 16):",
+                    promptLatex: `\\frac{1}{2}'' + \\frac{3}{8}'' + \\frac{5}{16}'' + \\frac{1}{4}'' = \\text{___}`,
+                    correctAnswer: cleanMath(ans), options: options.map(cleanMath),
+                    explanation: `Convert to 16ths: 8/16 + 6/16 + 5/16 + 4/16 = 23/16 = 1 7/16''`
+                };
+            }
+        }
+
+        class BulkGroupDozenConversionGenerator {
+            generate() {
+                const doz = getRandomInt(4, 15);
+                const count = doz * 12;
+                const options = shuffleArray([`${count} \\text{ pieces}`, `${doz + 12} \\text{ pieces}`, `${doz * 10} \\text{ pieces}`, `${count + 6} \\text{ pieces}`]);
+                return {
+                    id: `l12_12_${Date.now()}`, moduleKey: 'l12_dozens', moduleTitle: 'Dozens & Packaging Conversions', tag: '12',
+                    prompt: `Convert ${doz} dozen 2×4 lumber studs into total individual piece count:`,
+                    promptLatex: `${doz} \\text{ dozen} \\times 12 \\text{ pcs/dozen} = \\text{___}`,
+                    correctAnswer: cleanMath(`${count} \\text{ pieces}`), options: options.map(cleanMath),
+                    explanation: `Multiply dozens by 12: ${doz} × 12 = ${count} pieces`
+                };
+            }
+        }
+
+        class FractionalRateThreadPitchGenerator {
+            generate() {
+                const rate = 3;
+                const len = getRandomInt(2, 6);
+                const count = rate * 8 * len;
+                const options = shuffleArray([`${count} \\text{ threads}`, `${rate * len} \\text{ threads}`, `${8 * len} \\text{ threads}`, `${count / 2} \\text{ threads}`]);
+                return {
+                    id: `l12_13_${Date.now()}`, moduleKey: 'l12_pitch', moduleTitle: 'Thread Pitch & Density Rates', tag: '12',
+                    prompt: `A machine anchor bolt has ${rate} threads per \\(\\frac{1}{8}\\) inch. How many total threads are along a ${len}-inch threaded shaft?`,
+                    promptLatex: `\\text{Threads} = \\left(${rate} \\times 8 \\text{ threads/in.}\\right) \\times ${len}\\text{ in.} = \\text{___}`,
+                    correctAnswer: cleanMath(`${count} \\text{ threads}`), options: options.map(cleanMath),
+                    explanation: `Rate per inch = ${rate} × 8 = 24 threads/inch. Multiply by ${len} inches: 24 × ${len} = ${count} threads.`
+                };
+            }
+        }
+
+        class CompositeCutoutAreaGenerator {
+            generate() {
+                const L = 12, W = 10, cL = 7, cW = 2;
+                const totalA = L * W, cutA = cL * cW;
+                const netA = totalA - cutA;
+                const svg = `<svg width="220" height="150" viewBox="0 0 220 150" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px;">
+                    <rect x="20" y="20" width="180" height="110" fill="#94a3b8" stroke="#334155" stroke-width="2"/>
+                    <rect x="70" y="55" width="80" height="40" fill="#f8fafc" stroke="#ef4444" stroke-width="2" stroke-dasharray="4"/>
+                    <text x="110" y="15" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">12m</text>
+                    <text x="10" y="80" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">10m</text>
+                    <text x="110" y="78" text-anchor="middle" font-size="10" font-weight="bold" fill="#ef4444">Hatch Cutout (7m × 2m)</text>
+                </svg>`;
+
+                const options = shuffleArray([`${netA} \\text{ m}^2`, `${totalA} \\text{ m}^2`, `${totalA + cutA} \\text{ m}^2`, `${netA - 10} \\text{ m}^2`]);
+                return {
+                    id: `l12_14_${Date.now()}`, moduleKey: 'l12_cutout_area', moduleTitle: 'Composite Plate Cutout Area', tag: '12',
+                    prompt: `Calculate net steel surface area of deck plate with access hatch cutout:`,
+                    promptLatex: `\\text{Net Area} = (12\\text{m} \\times 10\\text{m}) - (7\\text{m} \\times 2\\text{m}) = \\text{___}`,
+                    payloadHtml: svg,
+                    correctAnswer: cleanMath(`${netA} \\text{ m}^2`), options: options.map(cleanMath),
+                    explanation: `Total plate area = 120 m². Cutout hatch area = 14 m². Net area = 120 - 14 = 106 m².`
+                };
+            }
+        }
+
+        class ToleranceRangeAcceptableValueGenerator {
+            generate() {
+                const target = 102.0375, tol = 0.125;
+                const minV = (target - tol).toFixed(4);
+                const maxV = (target + tol).toFixed(4);
+                const options = shuffleArray([`${minV}`, `${maxV}`, `${(target - 2*tol).toFixed(4)}`, `${target}`]);
+                return {
+                    id: `l12_15_${Date.now()}`, moduleKey: 'l12_tolerance', moduleTitle: 'Grade Tolerance Bounds (Min/Max)', tag: '12',
+                    prompt: `Calculate the MINIMUM acceptable subgrade offset elevation given target ${target} ft and tolerance ±${tol} ft:`,
+                    promptLatex: `\\text{Min Elevation} = ${target} - ${tol} = \\text{___}`,
+                    correctAnswer: cleanMath(`${minV}`), options: options.map(cleanMath),
+                    explanation: `Subtract tolerance from target: ${target} - ${tol} = ${minV}`
+                };
+            }
+        }
+
+        class TabularDataLookupAverageGenerator {
+            generate() {
+                const htmlTable = `<table class="math-table">
+                    <thead><tr><th>Pipe Size</th><th>Sched 40 Strength</th><th>Sched 80 Strength</th></tr></thead>
+                    <tbody>
+                        <tr><td>1.00"</td><td>1,200 lbs</td><td>2,400 lbs</td></tr>
+                        <tr><td>1.50"</td><td>2,100 lbs</td><td>3,900 lbs</td></tr>
+                        <tr><td>2.00"</td><td>3,600 lbs</td><td>5,800 lbs</td></tr>
+                    </tbody>
+                </table>`;
+
+                const ans = "2,300 lbs";
+                const options = shuffleArray(["2,300 lbs", "4,033 lbs", "6,900 lbs", "1,800 lbs"]);
+                return {
+                    id: `l12_16_${Date.now()}`, moduleKey: 'l12_table_lookup', moduleTitle: 'Pipe Schedule Tensile Strength Table Lookup', tag: '12',
+                    prompt: "Find the average tensile rating for Schedule 40 pipe across sizes 1.00\" through 2.00\":",
+                    promptLatex: `\\bar{S}_{40} = \\frac{1,200 + 2,100 + 3,600}{3} = \\text{___}`,
+                    payloadHtml: htmlTable,
+                    correctAnswer: cleanMath(ans), options: options.map(cleanMath),
+                    explanation: `Sum Sched 40 values = 6,900 lbs. Divide by 3 sizes = 2,300 lbs.`
+                };
+            }
+        }
+
+        class BarChartDataInterpretationGenerator {
+            generate() {
+                const val1 = 45, val2 = 60, val3 = 100;
+                const multiplier = 10000;
+                const totalVal = (val1 + val2 + val3) * multiplier;
+                const formattedAns = totalVal.toLocaleString() + " tonnes";
+
+                const svg = `<svg width="260" height="140" viewBox="0 0 260 140" style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:8px;">
+                    <line x1="40" y1="110" x2="240" y2="110" stroke="#475569" stroke-width="2"/>
+                    <line x1="40" y1="20" x2="40" y2="110" stroke="#475569" stroke-width="2"/>
+                    <rect x="60" y="65" width="35" height="45" fill="#3b82f6"/>
+                    <rect x="120" y="50" width="35" height="60" fill="#3b82f6"/>
+                    <rect x="180" y="10" width="35" height="100" fill="#3b82f6"/>
+                    <text x="77" y="125" text-anchor="middle" font-size="10" fill="#334155">2023</text>
+                    <text x="137" y="125" text-anchor="middle" font-size="10" fill="#334155">2024</text>
+                    <text x="197" y="125" text-anchor="middle" font-size="10" fill="#334155">2025</text>
+                    <text x="130" y="15" text-anchor="middle" font-size="10" font-weight="bold" fill="#1e293b">Scale: ×10,000 Tonnes</text>
+                </svg>`;
+
+                const options = shuffleArray([formattedAns, `${(val1 + val2 + val3).toLocaleString()} tonnes`, `${(totalVal / 10).toLocaleString()} tonnes`, `${(totalVal + 500000).toLocaleString()} tonnes`]);
+                return {
+                    id: `l12_17_${Date.now()}`, moduleKey: 'l12_barchart', moduleTitle: 'Bar Chart Interpretation & Scale Multiplier', tag: '12',
+                    prompt: "Calculate total quarry output across all 3 years using scale multiplier (×10,000 tonnes):",
+                    promptLatex: `\\text{Total Output} = (45 + 60 + 100) \\times 10,000 = \\text{___}`,
+                    payloadHtml: svg,
+                    correctAnswer: cleanMath(formattedAns), options: options.map(cleanMath),
+                    explanation: `Sum chart heights (45 + 60 + 100 = 205). Multiply by 10,000 scale = 2,050,000 tonnes.`
+                };
+            }
+        }
+
+        // ==========================================
+        // MASTER APP REGISTRY & STATE CONTROLLER
+        // ==========================================
+
+        const MODULE_REGISTRY = [
+            // Local 105 Modules
+            { key: 'wn_arith', title: 'Whole Number Arithmetic', tag: '105', gen: new WholeNumberArithmeticGenerator() },
+            { key: 'frac_arith', title: 'Fraction Arithmetic', tag: '105', gen: new FractionArithmeticGenerator() },
+            { key: 'frac_concept', title: 'Fraction Simplification', tag: '105', gen: new FractionConceptsGenerator() },
+            { key: 'dec_mult', title: 'Decimal Multiplication (Study Guide)', tag: '105', gen: new DecimalMultiplicationStudyGuideGenerator() },
+            { key: 'dec_arith', title: 'Decimal Arithmetic', tag: '105', gen: new DecimalArithmeticGenerator() },
+            { key: 'dec_frac', title: 'Decimal to Fraction', tag: '105', gen: new DecimalToFractionGenerator() },
+            { key: 'num_conv', title: 'Number Conversions (% / Dec)', tag: '105', gen: new NumberConversionsGenerator() },
+            { key: 'frac_pct_num', title: 'Fraction & % of Number', tag: '105', gen: new FractionPercentOfNumberGenerator() },
+            { key: 'applied_pct', title: 'Applied Percents & Payroll', tag: '105', gen: new AppliedPercentsGenerator() },
+            { key: 'exp_powers', title: 'Exponents & Powers', tag: '105', gen: new ExponentsAndPowersGenerator() },
+            { key: 'alg_eval', title: 'Algebraic Evaluation', tag: '105', gen: new AlgebraicEvaluationGenerator() },
+            { key: 'pemdas', title: 'Order of Operations (PEMDAS)', tag: '105', gen: new OrderOfOperationsIntegersGenerator() },
+            { key: 'poly_arith', title: 'Polynomial Arithmetic', tag: '105', gen: new PolynomialArithmeticGenerator() },
+            { key: 'sys_eq', title: 'Systems of Equations (Standard & Harder)', tag: '105', gen: new SystemsOfEquationsGenerator() },
+
+            // Local 12 Modules
+            { key: 'l12_shim', title: 'Stacked Shim Thickness', tag: '12', gen: new StackedMaterialThicknessGenerator() },
+            { key: 'l12_bolt_wt', title: 'Bulk Hardware Weight', tag: '12', gen: new BulkHardwareWeightGenerator() },
+            { key: 'l12_unit_conv', title: 'Grade Rod Unit Conversion', tag: '12', gen: new OperatingEngineersUnitConversionGenerator() },
+            { key: 'l12_mat_cost', title: 'Rate-Based Material Costing', tag: '12', gen: new RateBasedMaterialCostGenerator() },
+            { key: 'l12_stack_qty', title: 'Stacked Material Quantity', tag: '12', gen: new StackedMaterialQuantityGenerator() },
+            { key: 'l12_stationing', title: 'Stationing & Assembly Costing', tag: '12', gen: new CompositeAssemblyCostingGenerator() },
+            { key: 'l12_swl', title: 'Safe Working Load Capacity', tag: '12', gen: new SafeWorkingLoadCapacityGenerator() },
+            { key: 'l12_volume', title: 'Trench Volume & Cubic Yards', tag: '12', gen: new RectangularVolumeGenerator() },
+            { key: 'l12_dec_equiv', title: 'Decimal/Fraction Equivalence', tag: '12', gen: new DecimalFractionEquivalenceGenerator() },
+            { key: 'l12_weighted_avg', title: 'Cargo Weighted Group Avg', tag: '12', gen: new WeightedGroupAverageGenerator() },
+            { key: 'l12_multiterm_frac', title: 'Multi-Term Fraction Sum', tag: '12', gen: new MultiTermFractionSummationGenerator() },
+            { key: 'l12_dozens', title: 'Dozens & Packaging Units', tag: '12', gen: new BulkGroupDozenConversionGenerator() },
+            { key: 'l12_pitch', title: 'Thread Pitch & Density Rates', tag: '12', gen: new FractionalRateThreadPitchGenerator() },
+            { key: 'l12_cutout_area', title: 'Composite Cutout Area (SVG)', tag: '12', gen: new CompositeCutoutAreaGenerator() },
+            { key: 'l12_tolerance', title: 'Grade Tolerance Bounds', tag: '12', gen: new ToleranceRangeAcceptableValueGenerator() },
+            { key: 'l12_table_lookup', title: 'Pipe Schedule Table Lookup', tag: '12', gen: new TabularDataLookupAverageGenerator() },
+            { key: 'l12_barchart', title: 'Bar Chart Output (SVG)', tag: '12', gen: new BarChartDataInterpretationGenerator() }
+        ];
+
+        // App State
+        let isStudentMode = false;
+        let currentFilter = 'ALL';
+        let selectedModuleKey = 'wn_arith';
+        let selectedExamPreset = null; // '105' or '12'
+        let currentQuestions = [];
+        let userAnswers = {};
+        let webhookUrl = localStorage.getItem('local105_12_webhook_url') || '';
+        let currentTitle = "Assignment Practice";
+
+        window.addEventListener('DOMContentLoaded', () => {
+            // Check URL parameters for Student Link Mode
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('mode') === 'student') {
+                isStudentMode = true;
+                // Parse configuration from URL if present
+                const encodedConfig = urlParams.get('config');
+                if (encodedConfig) {
+                    try {
+                        const decoded = JSON.parse(atob(encodedConfig));
+                        if (decoded.webhookUrl) webhookUrl = decoded.webhookUrl;
+                        if (decoded.title) currentTitle = decoded.title;
+                        if (decoded.questions && decoded.questions.length > 0) {
+                            currentQuestions = decoded.questions;
+                        }
+                    } catch (e) {
+                        console.error("Could not parse assignment config:", e);
+                    }
+                }
+            }
+
+            if (isStudentMode) {
+                // STUDENT VIEW MODE SETUP
+                document.getElementById('teacherSidebar').classList.add('hidden');
+                document.getElementById('teacherHeaderControls').classList.add('hidden');
+                document.getElementById('studentIdCard').classList.remove('hidden');
+                document.getElementById('workspaceArea').className = "lg:col-span-12 max-w-3xl mx-auto space-y-6 w-full";
+                document.getElementById('appHeaderTitle').innerText = currentTitle;
+                document.getElementById('appHeaderSub').innerText = "Student Quiz & Assignment Submission Form";
+
+                // If questions were provided in config, render them directly
+                if (currentQuestions.length > 0) {
+                    document.getElementById('emptyState').classList.add('hidden');
+                    document.getElementById('quizForm').classList.remove('hidden');
+                    renderAllProblems();
+                }
+            } else {
+                // TEACHER VIEW MODE SETUP
+                document.getElementById('studentIdCard').classList.add('hidden');
+                renderSidebarModuleList();
+                if (webhookUrl) document.getElementById('webhookUrlInput').value = webhookUrl;
+            }
+        });
+
+        function filterModules(filter) {
+            currentFilter = filter;
+            ['All', '105', '12', 'Test'].forEach(f => {
+                const btn = document.getElementById(`filter${f}`);
+                if (filter === f.toUpperCase() || (filter === 'ALL' && f === 'All')) {
+                    btn.className = 'py-1.5 rounded bg-white text-slate-800 shadow-sm font-bold';
+                } else {
+                    btn.className = 'py-1.5 rounded text-slate-600 hover:text-slate-900 font-medium';
+                }
+            });
+            renderSidebarModuleList();
+        }
+
+        function updateCountDisplay() {
+            const count = document.getElementById('questionCountInput').value;
+            document.getElementById('questionCountDisplay').innerText = `${count} Questions`;
+        }
+
+        function selectExamPreset(tag) {
+            selectedExamPreset = tag;
+            selectedModuleKey = null;
+            const count = tag === '105' ? 25 : 17;
+            document.getElementById('questionCountInput').value = count;
+            updateCountDisplay();
+
+            document.getElementById('preset105Btn').className = tag === '105' ? 'p-2.5 rounded-lg border-2 border-blue-600 bg-blue-100 text-blue-900 font-bold' : 'p-2.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-900';
+            document.getElementById('preset12Btn').className = tag === '12' ? 'p-2.5 rounded-lg border-2 border-amber-600 bg-amber-100 text-amber-900 font-bold' : 'p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-900';
+            renderSidebarModuleList();
+        }
+
+        function renderSidebarModuleList() {
+            const container = document.getElementById('moduleList');
+            container.innerHTML = '';
+
+            const filtered = MODULE_REGISTRY.filter(m => {
+                if (currentFilter === 'ALL') return true;
+                if (currentFilter === '105') return m.tag === '105';
+                if (currentFilter === '12') return m.tag === '12';
+                return true;
+            });
+
+            filtered.forEach(m => {
+                const badgeClass = m.tag === '105' ? 'badge-105' : 'badge-12';
+                const isSelected = (!selectedExamPreset && m.key === selectedModuleKey) ? 'card-selected' : '';
+                
+                const card = document.createElement('div');
+                card.className = `p-2.5 rounded-lg border border-slate-200 bg-white hover:border-blue-400 cursor-pointer transition flex justify-between items-center ${isSelected}`;
+                card.onclick = () => {
+                    selectedExamPreset = null;
+                    selectedModuleKey = m.key;
+                    document.getElementById('preset105Btn').className = 'p-2.5 rounded-lg border border-blue-200 bg-blue-50 text-blue-900';
+                    document.getElementById('preset12Btn').className = 'p-2.5 rounded-lg border border-amber-200 bg-amber-50 text-amber-900';
+                    renderSidebarModuleList();
+                };
+
+                card.innerHTML = `
+                    <div class="pr-2">
+                        <h4 class="text-xs font-bold text-slate-800 leading-tight">${m.title}</h4>
+                    </div>
+                    <span class="text-[10px] font-extrabold px-2 py-0.5 rounded ${badgeClass}">L-${m.tag}</span>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function generateQuizBatch() {
+            const count = parseInt(document.getElementById('questionCountInput').value) || 5;
+            currentQuestions = [];
+            userAnswers = {};
+
+            if (selectedExamPreset) {
+                // Preset Full Exam Mode
+                currentTitle = selectedExamPreset === '105' ? 'SMART Local 105 Full Practice Exam' : 'OETT Local 12 Full Practice Exam';
+                const modules = MODULE_REGISTRY.filter(m => m.tag === selectedExamPreset);
+                for (let i = 0; i < Math.min(count, modules.length); i++) {
+                    currentQuestions.push(modules[i].gen.generate());
+                }
+            } else if (selectedModuleKey) {
+                // Single Module Mode
+                const mod = MODULE_REGISTRY.find(m => m.key === selectedModuleKey);
+                if (mod) {
+                    currentTitle = `${mod.title} Practice Quiz`;
+                    for (let i = 0; i < count; i++) {
+                        currentQuestions.push(mod.gen.generate());
+                    }
+                }
+            }
+
+            if (currentQuestions.length === 0) return;
+
+            // Hide empty state, show form
+            document.getElementById('emptyState').classList.add('hidden');
+            document.getElementById('summaryBanner').classList.add('hidden');
+            document.getElementById('quizForm').classList.remove('hidden');
+
+            renderAllProblems();
+        }
+
+        function renderAllProblems() {
+            const container = document.getElementById('problemsContainer');
+            container.innerHTML = '';
+
+            currentQuestions.forEach((q, qIdx) => {
+                const card = document.createElement('div');
+                card.className = 'bg-white rounded-xl shadow-sm border border-slate-200 p-6 space-y-4';
+                card.id = `qCard_${qIdx}`;
+
+                const badgeClass = q.tag === '105' ? 'badge-105' : 'badge-12';
+
+                // Render Options
+                let optionsHtml = '';
+                q.options.forEach((opt, optIdx) => {
+                    const letter = String.fromCharCode(65 + optIdx);
+                    optionsHtml += `
+                        <label onclick="selectUserAnswer(${qIdx}, '${opt.replace(/'/g, "\\'")}', this)" class="p-3 rounded-lg border border-slate-200 bg-slate-50 hover:bg-blue-50 hover:border-blue-300 cursor-pointer transition flex items-center gap-3 text-xs font-semibold text-slate-800 font-mono-math opt-item-${qIdx}">
+                            <input type="radio" name="question_${qIdx}" value="${opt.replace(/"/g, '&quot;')}" class="hidden">
+                            <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 flex items-center justify-center text-xs font-bold font-sans">${letter}</span>
+                            <span class="tex2jax_process">\\(${opt}\\)</span>
+                        </label>
+                    `;
+                });
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-center border-b border-slate-100 pb-3">
+                        <span class="text-xs font-bold px-2.5 py-0.5 rounded-full uppercase ${badgeClass}">Local ${q.tag} • ${q.moduleTitle}</span>
+                        <span class="text-xs font-bold text-slate-400">Problem ${qIdx + 1} of ${currentQuestions.length}</span>
+                    </div>
+
+                    <h3 class="text-sm font-bold text-slate-800">${q.prompt}</h3>
+
+                    ${q.promptLatex ? `<div class="my-3 p-4 bg-slate-50 border border-slate-200 rounded-lg overflow-x-auto text-center font-mono-math text-base tex2jax_process">\\[${q.promptLatex}\\]</div>` : ''}
+
+                    ${q.payloadHtml ? `<div class="my-3 overflow-x-auto text-center svg-container">${q.payloadHtml}</div>` : ''}
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 my-4">
+                        ${optionsHtml}
+                    </div>
+
+                    <div id="solutionBox_${qIdx}" class="hidden bg-emerald-50 border border-emerald-200 rounded-lg p-4 text-xs text-emerald-900 space-y-1">
+                        <span class="font-bold uppercase text-[10px] tracking-wider text-emerald-700 block">Step-by-Step Solution</span>
+                        <div class="tex2jax_process font-mono-math">${q.explanation}</div>
+                    </div>
+                `;
+
+                container.appendChild(card);
+            });
+
+            // Trigger MathJax Typesetting
+            if (window.MathJax && MathJax.typesetPromise) {
+                MathJax.typesetPromise();
+            }
+        }
+
+        function selectUserAnswer(qIdx, optionValue, labelElem) {
+            userAnswers[qIdx] = optionValue;
+            document.querySelectorAll(`.opt-item-${qIdx}`).forEach(el => el.classList.remove('opt-selected'));
+            labelElem.classList.add('opt-selected');
+        }
+
+        function submitAssessment() {
+            // Check student name if in student mode
+            let firstName = "", lastName = "";
+            if (isStudentMode) {
+                firstName = document.getElementById('studentFirstName').value.trim();
+                lastName = document.getElementById('studentLastName').value.trim();
+                if (!firstName || !lastName) {
+                    alert("Please enter both your First Name and Last Name before submitting your assessment!");
+                    return;
+                }
+            }
+
+            let correctCount = 0;
+
+            // Grade questions and highlight answers
+            currentQuestions.forEach((q, qIdx) => {
+                const userAns = userAnswers[qIdx];
+                const solutionBox = document.getElementById(`solutionBox_${qIdx}`);
+                if (solutionBox) solutionBox.classList.remove('hidden');
+
+                const optionLabels = document.querySelectorAll(`.opt-item-${qIdx}`);
+                optionLabels.forEach(label => {
+                    const radio = label.querySelector('input');
+                    const val = radio ? radio.value : '';
+
+                    if (val === q.correctAnswer) {
+                        label.classList.add('opt-correct');
+                    } else if (val === userAns && userAns !== q.correctAnswer) {
+                        label.classList.add('opt-incorrect');
+                    }
+                });
+
+                if (userAns === q.correctAnswer) {
+                    correctCount++;
+                }
+            });
+
+            const total = currentQuestions.length;
+            const pct = Math.round((correctCount / total) * 100);
+
+            // Display Summary Banner
+            const summaryBanner = document.getElementById('summaryBanner');
+            summaryBanner.classList.remove('hidden');
+            document.getElementById('summaryTestTitle').innerText = currentTitle;
+            document.getElementById('summaryScoreText').innerText = `Score: ${correctCount} / ${total} (${pct}%)`;
+            document.getElementById('summaryStudentName').innerText = isStudentMode ? `Student: ${firstName} ${lastName}` : `Teacher Practice Mode`;
+            
+            const summaryBadge = document.getElementById('summaryBadge');
+            summaryBadge.innerText = pct >= 70 ? 'PASSED (70%+)' : 'NEEDS PRACTICE';
+            summaryBadge.className = pct >= 70 ? 'bg-emerald-500 text-white font-extrabold px-4 py-2 rounded-lg text-sm shadow' : 'bg-red-500 text-white font-extrabold px-4 py-2 rounded-lg text-sm shadow';
+
+            // Scroll to top to see score
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // Post to Webhook if configured
+            if (webhookUrl) {
+                const payload = {
+                    studentFirstName: firstName || "Anonymous",
+                    studentLastName: lastName || "Student",
+                    studentName: `${firstName} ${lastName}`.trim() || "Anonymous Student",
+                    timestamp: new Date().toISOString(),
+                    testTitle: currentTitle,
+                    score: correctCount,
+                    total: total,
+                    percentage: `${pct}%`
+                };
+
+                fetch(webhookUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                }).then(() => {
+                    console.log("Score logged to webhook successfully.");
+                }).catch(err => {
+                    console.error("Webhook logging error:", err);
+                });
+            }
+        }
+
+        function copyStudentLink() {
+            if (currentQuestions.length === 0) {
+                alert("Please click 'Generate Quiz Batch' first to create the assignment problems!");
+                return;
+            }
+
+            const config = {
+                title: currentTitle,
+                webhookUrl: webhookUrl,
+                questions: currentQuestions
+            };
+
+            const encodedConfig = btoa(JSON.stringify(config));
+            const baseUrl = window.location.href.split('?')[0];
+            const studentUrl = `${baseUrl}?mode=student&config=${encodedConfig}`;
+
+            navigator.clipboard.writeText(studentUrl).then(() => {
+                alert("🔗 Student Assignment Link copied to clipboard!\n\nStudents opening this link will see ONLY the First & Last Name fields, the assignment title, and the problem set without any teacher controls.");
+            }).catch(err => {
+                alert("Copied link URL:\n" + studentUrl);
+            });
+        }
+
+        function toggleSettingsModal() {
+            document.getElementById('settingsModal').classList.toggle('hidden');
+        }
+
+        function saveWebhookSettings() {
+            const url = document.getElementById('webhookUrlInput').value.trim();
+            webhookUrl = url;
+            localStorage.setItem('local105_12_webhook_url', url);
+            toggleSettingsModal();
+            alert("Webhook URL Saved!");
+        }
+    </script>
+</body>
+</html>
